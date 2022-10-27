@@ -3,9 +3,9 @@
 
 ## Integrantes
 
-- Jesús Santos Capote @sheldon05
-- Kenny Villalobos @
-- Darío Fragas @dfg-98
+- Jesús Santos Capote [@sheldon05](https://github.com/sheldon05)
+- Kenny Villalobos [@KennyVillalobos](https://github.com/KennyVillalobos)
+- Darío Fragas [@dfg-98](https://github.com/dfg-98)
   
 # Descripción del problema
 
