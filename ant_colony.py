@@ -31,7 +31,7 @@ class AntColony(object):
 
         list_of_trees.sort(key= lambda x : x[1])
             
-        return list_of_trees
+        return list_of_trees, np.shape(self.costs)[0]
 
     def spread_pheronome(self, all_trees):
         for tree in all_trees:
@@ -82,3 +82,31 @@ class AntColony(object):
             i = i * self.decay
 
         return None
+
+
+distances = np.array([[np.inf, 2, 2, 5, 7],
+
+                      [2, np.inf, 4, 8, 2],
+
+                      [2, 4, np.inf, 1, 3],
+
+                      [5, 8, 1, np.inf, 2],
+
+                      [7, 2, 3, 2, np.inf]])
+
+
+distances2 = np.array([[np.inf, 1, 8, 8, 8],
+
+                      [1, np.inf, 1, 8, 8],
+
+                      [8, 1, np.inf, 1, 8],
+
+                      [8, 8, 1, np.inf, 1],
+
+                      [1, 8, 8, 1, np.inf]])
+
+
+ant_colony = AntColony(distances2, 3, 100, 0.95, alpha=1, beta=1, delta_tau = 2)
+
+for tree in ant_colony.run():
+    print(str(tree) + "\n")
