@@ -1,8 +1,9 @@
 import networkx as nx
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
-class genetic_algorithm:
+class GeneticAlgorithm:
 
     def __init__(self, population_lenght, iter_number, cost_matrix, get_fitness, beta = 1.6, alpha = 0.15, crossing_prob = 0.6, mutation_prob = 0.001, to_mutate = 1) -> None:
         self.cost_matrix = cost_matrix
@@ -21,7 +22,7 @@ class genetic_algorithm:
             graph = nx.erdos_renyi_graph(self.n_nodes, alpha)
             graph = self.add_edge_weigth(graph)
             chromo = self.get_chromosome(graph)
-            self.population.append((graph, chromo, 0))
+            self.population.append([graph, chromo, 0])
 
     
     def run(self):
@@ -43,7 +44,7 @@ class genetic_algorithm:
             for chromo in self.new_generation_chromos:
                 graph = self.build_from_chromosome(chromo)
                 graph = self.add_edge_weigth(graph)
-                new_generation.append(graph)
+                new_generation.append([graph, chromo, 0])
 
             self.population = new_generation
 
@@ -57,7 +58,7 @@ class genetic_algorithm:
         intermediate_population = []
 
         for i in range(n):
-            p_i = p_min + (p_max - p_min)*((n - i)/(n - 1))
+            p_i = p_min + (p_max - p_min)*((n - (i+1))/(n - 1))
 
             p = p_i * n
 
@@ -76,20 +77,27 @@ class genetic_algorithm:
         population_chromosomes = [graph[1] for graph in self.intermediate_population]
         population_pairs = []
         crossed_population = []
+        selected_population_pairs = []
 
         for i in range(n):
             for j in range(i+1, n):
                 population_pairs.append((population_chromosomes[i], population_chromosomes[j]))
 
-        for i in range(population_pairs // 2):
-            parent1, parent2 = np.random.choice(population_pairs, replace=False)
+        for i in range(len(population_pairs)):
+            p = random.uniform(0, 1)
+            if p < self.crossing_prob:
+                selected_population_pairs.append(population_pairs[i])
+
+        for parent1, parent2 in selected_population_pairs:
             gen_len = len(parent1)
             crossing_index = random.randint(0, gen_len - 1)
 
-            child1 = [].extend(parent1[0:crossing_index])
+            child1 = []
+            child1.extend(parent1[0:crossing_index])
             child1.extend(parent2[crossing_index:gen_len])
 
-            child2 = [].extend(parent2[0:crossing_index])
+            child2 = []
+            child2.extend(parent2[0:crossing_index])
             child2.extend(parent1[crossing_index:gen_len])
 
             crossed_population.append(child1)
@@ -160,14 +168,24 @@ class genetic_algorithm:
 
 
 
-# graph = nx.erdos_renyi_graph(5, 0.15)
-# print(graph.edges()) 
-# for u,v in graph.edges():
-#     print(u)
-#     print(v)  
+distances = np.array([[np.inf, 2, 2, 5, 7],
 
-a = [3, 5, 6, 6, 4]
+                      [2, np.inf, 4, 8, 2],
 
-for i in a:
-    i = 2
-print(a)
+                      [2, 4, np.inf, 1, 3],
+
+                      [5, 8, 1, np.inf, 2],
+
+                      [7, 2, 3, 2, np.inf]]) 
+
+def provisional_fitnees(graph:nx.Graph):
+    fitness = 0
+    for u,v,w in graph.edges().data('weight'):
+        fitness += w
+    return fitness
+
+genetic_algorithm = GeneticAlgorithm(3, 5, distances, provisional_fitnees)
+
+sol = genetic_algorithm.run()
+
+print(sol[0].edges())
