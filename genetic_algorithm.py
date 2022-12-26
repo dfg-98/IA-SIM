@@ -4,7 +4,7 @@ import random
 
 class genetic_algorithm:
 
-    def __init__(self, population_lenght, cost_matrix, get_fitness, beta = 1.6, alpha = 0.15, crossing_prob = 0.6, mutation_prob = 0.001, to_mutate = 1) -> None:
+    def __init__(self, population_lenght, iter_number, cost_matrix, get_fitness, beta = 1.6, alpha = 0.15, crossing_prob = 0.6, mutation_prob = 0.001, to_mutate = 1) -> None:
         self.cost_matrix = cost_matrix
         self.beta = beta
         self.crossing_prob = crossing_prob
@@ -15,12 +15,39 @@ class genetic_algorithm:
         self.get_fitness = get_fitness
         self.mutation_prob = mutation_prob
         self.to_mutate = to_mutate
+        self.iter_number = iter_number
 
         for i in range(population_lenght):
             graph = nx.erdos_renyi_graph(self.n_nodes, alpha)
             graph = self.add_edge_weigth(graph)
             chromo = self.get_chromosome(graph)
             self.population.append((graph, chromo, 0))
+
+    
+    def run(self):
+        best_network = (nx.Graph(), [], 0)
+
+        for i in range(self.iter_number):
+            self.calculate_population_fitnesses()
+            best_of_iter = max(self.population, key=lambda x: x[2])
+
+            if best_of_iter[2] > best_network[2]:
+                best_network = best_of_iter
+
+            self.reproduction()
+            self.crossing()
+            self.mutation()
+
+            new_generation = []
+
+            for chromo in self.new_generation_chromos:
+                graph = self.build_from_chromosome(chromo)
+                graph = self.add_edge_weigth(graph)
+                new_generation.append(graph)
+
+            self.population = new_generation
+
+        return best_network
 
 
     def reproduction(self): #TODO check if this work fine because the indexes of the population 
@@ -46,13 +73,13 @@ class genetic_algorithm:
 
     def crossing(self):
         n = len(self.intermediate_population)
-        population_gens = [graph[1] for graph in self.intermediate_population]
+        population_chromosomes = [graph[1] for graph in self.intermediate_population]
         population_pairs = []
         crossed_population = []
 
         for i in range(n):
             for j in range(i+1, n):
-                population_pairs.append((population_gens[i], population_gens[j]))
+                population_pairs.append((population_chromosomes[i], population_chromosomes[j]))
 
         for i in range(population_pairs // 2):
             parent1, parent2 = np.random.choice(population_pairs, replace=False)
@@ -79,16 +106,12 @@ class genetic_algorithm:
                 chromo_len = len(self.new_generation_chromos[0])
                 index = random.randint(0, chromo_len - 1)
                 self.new_generation_chromos[i][index] = not self.new_generation_chromos[i][index]
-        
-
-
-
 
 
     def calculate_population_fitnesses(self):
-        for item in self.population:
-            fitness = self.get_fitness(item[0])
-            item[2] = fitness
+        for i in range(len(self.population)):
+            fitness = self.get_fitness(self.population[i][0])
+            self.population[i][2] = fitness
 
         self.population.sort(key= lambda x: x[2], reverse=True)     
 
@@ -108,6 +131,21 @@ class genetic_algorithm:
             chromosome[index] = True
 
         return chromosome
+
+
+    def build_from_chromosome(self, chromosome):
+        graph = nx.Graph()
+        vertex_number = np.shape(self.cost_matrix)[0] 
+
+        for i in range(vertex_number):
+            graph.add_node(i)
+
+        for i in range(len(chromosome)):
+            if chromosome[i]:
+                u, v = self.get_matrix_indexes(i)
+                graph.add_edge(u, v)
+
+        return graph
 
 
     def get_matrix_indexes(self, flattened_index):
