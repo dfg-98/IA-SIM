@@ -79,14 +79,16 @@ class GeneticAlgorithm:
         crossed_population = []
         selected_population_pairs = []
 
-        for i in range(n):
-            for j in range(i+1, n):
-                population_pairs.append((population_chromosomes[i], population_chromosomes[j]))
+        pairs_added = [[False for i in range(n)] for j in range(n)]
+        indexes = [i for i in range(n)]
 
-        for i in range(len(population_pairs)):
-            p = random.uniform(0, 1)
-            if p < self.crossing_prob:
-                selected_population_pairs.append(population_pairs[i])
+        while len(selected_population_pairs) < n / 2:
+            chromo1, chromo2 = np.random.choice(indexes, 2, replace=False)
+            if not pairs_added[chromo1][chromo2]:
+                pairs_added[chromo1][chromo2] = True
+                parent1 = population_chromosomes[chromo1]
+                parent2 = population_chromosomes[chromo2]
+                selected_population_pairs.append((parent1, parent2))
 
         for parent1, parent2 in selected_population_pairs:
             gen_len = len(parent1)
@@ -113,7 +115,9 @@ class GeneticAlgorithm:
             if p < self.mutation_prob:
                 chromo_len = len(self.new_generation_chromos[0])
                 index = random.randint(0, chromo_len - 1)
-                self.new_generation_chromos[i][index] = not self.new_generation_chromos[i][index]
+                row, col = self.get_matrix_indexes(index)
+                if row != col: #avoiding set True a diagonal bit because cost_matrix in the diagonal is math.inf
+                    self.new_generation_chromos[i][index] = not self.new_generation_chromos[i][index]
 
 
     def calculate_population_fitnesses(self):
@@ -184,8 +188,12 @@ def provisional_fitnees(graph:nx.Graph):
         fitness += w
     return fitness
 
-genetic_algorithm = GeneticAlgorithm(3, 5, distances, provisional_fitnees)
+genetic_algorithm = GeneticAlgorithm(100, 500, distances, provisional_fitnees)
 
 sol = genetic_algorithm.run()
 
 print(sol[0].edges())
+
+
+# a = [[False for i in range(n)] for j in range(n)]
+# print(a)
