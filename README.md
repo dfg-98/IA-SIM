@@ -66,3 +66,46 @@ general lo más bajo posible y que la producción de dinero sea la más alta.
 simulación.
 - Estudiar el comportamiento de un recurso real e implementar una solución del problema para dicho recurso (teniendo en cuenta distribución de probabilidad de las variables involucradas en el proceso y características propias del recurso)
 
+
+# Ejecutar
+
+Para ejecutar el proyecto se debe tener instalado python 3.8 o superior y las librerías de python que se encuentran en el archivo requirements.txt
+
+Para instalar las librerías se debe ejecutar el siguiente comando en la carpeta del proyecto:
+
+`pip install -r requirements.txt`
+
+Para ejecutar el proyecto se debe ejecutar el siguiente comando en la carpeta del proyecto:
+
+`python main.py data.json`
+
+Donde data.json es un fichero en json con la siguiente estructura:
+```json
+{
+    "nodes": [
+        {
+            "id": 0,
+            "type": "Producer",
+            "max_production": 500,
+            "production_rate": 1.0,
+            "production_bias": 10.0,
+            "resources": 0.0,
+            "max_resources": 100.0
+        },
+        {
+            "id": 1,
+            "type": "Consumer",
+            "min_consumption": 10,
+            "max_consumption": 20
+        },
+        ...
+    ],
+    "weights": [
+        { "node1": 0, "node2": 0, "weight": "inf" },
+        { "node1": 0, "node2": 1, "weight": 1.0 },
+        ...
+    ]
+}
+```
+
+Además se aceptan varios parametros para configurar la simulación y la ejecución general del programa
