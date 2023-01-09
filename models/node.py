@@ -6,6 +6,9 @@ class Node:
     def __init__(self, id) -> None:
         self.id = id
 
+    def collect_resources(self):
+        return 0
+
     def color(self):
         raise NotImplemented
 
@@ -122,6 +125,70 @@ class ProducerNode(Node):
         }
 
 
+class ResourceProducerNode(ConsumerNode):
+    def __init__(
+        self,
+        id,
+        max_resource_production=100.0,
+        resource_production_rate=10.0,
+        resource_production_bias=10.0,
+    ) -> None:
+        super().__init__(id, min_consumption=None, max_consumption=None)
+        self.max_resource_production = max_resource_production
+        self.resource_production_rate = resource_production_rate
+        self.resource_production_bias = resource_production_bias
+        self.current_production = 0.0
+
+    def set_consumption(self):
+        low_production = max(
+            self.max_resource_production - self.resource_production_bias, 0.0
+        )
+        production = np.random.uniform(
+            low=low_production, high=self.max_resource_production
+        )
+        self.current_consumption = production * self.resource_production_rate
+        self.current_production = 0.0
+        self.status = ConsumerNode.Status.OFF
+        return self.current_consumption
+
+    def feed(self, power):
+        if power > self.current_consumption:
+            self.status = ConsumerNode.Status.ON
+            reminder = power - self.current_consumption
+            self.current_production = (
+                self.current_consumption / self.resource_production_rate
+            )
+            self.current_consumption += 0.0
+            return reminder
+        if 0 < power <= self.current_consumption:
+            self.status = ConsumerNode.Status.PARTIAL
+            self.current_production += power / self.resource_production_rate
+            self.current_consumption -= power
+        else:
+            self.status = ConsumerNode.Status.OFF
+        return 0.0
+
+    def color(self):
+        if self.status == ConsumerNode.Status.OFF:
+            return "red"
+        elif self.status == ConsumerNode.Status.PARTIAL:
+            return "orange"
+        elif self.status == ConsumerNode.Status.ON:
+            return "green"
+
+    def size(self):
+        return 200 * self.current_production
+
+    def to_json(self):
+        return {
+            "id": self.id,
+            "type": "ResourceProducer",
+            "max_resource_production": self.max_resource_production,
+            "resource_production_rate": self.resource_production_rate,
+            "resource_production_bias": self.resource_production_bias,
+        }
+
+
 import json
 
 
@@ -155,6 +222,13 @@ def parse_node(node):
             production_bias=node["production_bias"],
             resources=node["resources"],
             max_resources=node["max_resources"],
+        )
+    elif node["type"] == "ResourceProducer":
+        return ResourceProducerNode(
+            node["id"],
+            max_resource_production=node["max_resource_production"],
+            resource_production_rate=node["resource_production_rate"],
+            resource_production_bias=node["resource_production_bias"],
         )
     else:
         raise ValueError("Unknown node type")

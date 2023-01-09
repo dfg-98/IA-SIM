@@ -39,7 +39,7 @@ class Net:
                 node.set_consumption()
 
     def collect_resources(self):
-        self.resources += 100 * len(self.graph.nodes)
+        self.resources += sum(node.collect_resources() for node in self.graph.nodes)
 
     def resource_flow(self):
         producers = self.producer_nodes
