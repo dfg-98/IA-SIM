@@ -15,7 +15,13 @@ log = logging.getLogger()
 
 class Net:
     def __init__(
-        self, graph: Graph, initial_resources, env: Environment, with_visual=False
+        self,
+        graph: Graph,
+        env: Environment,
+        initial_resources=1000,
+        with_visual=False,
+        edge_damage_rate=1,
+        edge_reparation_cost=10,
     ) -> None:
         super().__init__()
         self.graph = graph
@@ -24,6 +30,11 @@ class Net:
         self.score = 0.0
         self.steps = 0
         self.with_visual = with_visual
+        self.edge_damage_rate = edge_damage_rate
+        self.edge_reparation_cost = edge_reparation_cost
+        # for edge in graph.edges:
+        # print(edge)
+        # self.graph[edge[0]][edge[1]]["health"] = 100.0
 
     def refresh(self):
         self.assign_resources()
@@ -34,9 +45,13 @@ class Net:
         for node in self.graph.nodes:
             if isinstance(node, GeneratorNode) and self.resources > 0:
                 resources = self.get_resources_to_assign(node)
+                print("TOTAL RESOURCES: ", self.resources)
+                print("RESOURCES TO ASSIGN: ", resources)
                 remainder = node.add_resources(resources)
+                print("Reminder: ", remainder)
                 self.resources += remainder
                 self.resources -= resources
+                print("CUREENT RES: ", self.resources)
 
     def set_consumption(self):
         for node in self.graph.nodes:
@@ -44,13 +59,33 @@ class Net:
                 node.set_consumption()
 
     def repair(self):
+        for edge in self.graph.edges():
+            if self.resources <= 0:
+                break
+            self.resources = self.repair_edge(edge[0], edge[1], self.resources)
         for node in self.health_nodes:
             if self.resources <= 0:
                 break
             self.resources = node.repair(self.resources)
 
+    def repair_edge(self, node1, node2, resources):
+        income_health = resources / self.edge_reparation_cost
+        edge = self.graph[node1][node2]
+        print("EDGE HEALTH: ", edge["health"])
+        needed_healh = 100.0 - edge["health"]
+        if income_health > needed_healh:
+            edge["health"] = 100.0
+            resource_cost = (income_health - needed_healh) * self.edge_reparation_cost
+            remainder = resources - resource_cost
+            return remainder
+
+        edge["health"] += income_health
+        return 0.0
+
     def collect_resources(self):
-        self.resources += sum(node.collect_resources() for node in self.graph.nodes)
+        resources = sum(node.collect_resources() for node in self.graph.nodes)
+        print("COLLECTED RESOURCES: ", resources)
+        self.resources += resources
 
     def resource_flow(self):
         producers = self.producer_nodes
@@ -58,11 +93,16 @@ class Net:
         for producer in producers:
             power = producer.produce(self.estimate_production(producer))
             print(f"Produced {power} by node {producer.id}")
-            for __unused, successors in bfs_successors(self.graph, producer):
+            for node, successors in bfs_successors(self.graph, producer):
                 for successor in successors:
                     if isinstance(successor, ConsumerNode):
-                        power = successor.feed(power)
-                        print(f"Fed node {successor.id}. Remaining power: {power}")
+                        current_power = power
+                        if self.graph[node][successor]["health"] > 0:
+                            power = successor.feed(power)
+                            print(f"Fed node {successor.id}. Remaining power: {power}")
+                        consumed = current_power - power
+                        damage = consumed / self.edge_damage_rate
+                        self.graph[node][successor]["health"] -= damage
                         if power <= 0:
                             break
                 if power <= 0:
@@ -130,5 +170,5 @@ def build_graph_from_nodes(nodes, graph):
         g.add_node(node)
     for edge in graph.edges:
         x, y = edge[0], edge[1]
-        g.add_edge(nodes[x], nodes[y])
+        g.add_edge(nodes[x], nodes[y], health=100.0)
     return g

@@ -4,7 +4,7 @@ from utils import clamp
 from enum import Enum
 
 DEFAULT_CONSUMPTION_BIAS = 10.0
-ELECTRICITY_PRICE = 1.0
+ELECTRICITY_PRICE = 10.0
 
 
 class ConsumerNode(Node):
@@ -48,6 +48,7 @@ class ConsumerNode(Node):
     def collect_resources(self):
         resources = self.generated_resources
         self.generated_resources = 0
+        print(f"[Node {self.id}] COLLECTED RESOURCES: ", resources)
         return resources
 
     def color(self):
@@ -127,4 +128,4 @@ class TurnBasedConsumerNode(ConsumerNode):
         node["type"] = "TurnBasedConsumer"
         node["on_turns"] = self.on_turns
         node["off_turns"] = self.off_turns
-        return super().to_json()
+        return node

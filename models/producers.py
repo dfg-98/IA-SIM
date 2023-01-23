@@ -59,14 +59,14 @@ class ResourceProducerNode(HealthNode, ConsumerNode):
 
     def color(self):
         if self.status == ConsumerNode.Status.OFF:
-            return "red"
+            return "pink"
         elif self.status == ConsumerNode.Status.PARTIAL:
-            return "orange"
+            return "yellow"
         elif self.status == ConsumerNode.Status.ON:
-            return "green"
+            return "black"
 
     def size(self):
-        return 200 * self.current_production
+        return 200 * (self.current_production + 1)
 
     def to_json(self):
         parent_node = super().to_json()

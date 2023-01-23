@@ -67,8 +67,8 @@ if __name__ == "__main__":
     env = Environment()
     net = Net(
         build_graph_from_nodes(nodes, solutions[0]),
-        options.resources,
         env,
+        options.resources,
         with_visual=True,
     )
     env.process(net.run())

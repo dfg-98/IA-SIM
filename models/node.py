@@ -19,7 +19,7 @@ class Node:
 
 
 class HealthNode(Node):
-    def __init__(self, id, reparation_cost_rate=10, *args, **kwargs) -> None:
+    def __init__(self, id, reparation_cost_rate=10.0, *args, **kwargs) -> None:
         super().__init__(id, *args, **kwargs)
         self.health = 100.0
         self.reparation_cost_rate = reparation_cost_rate
@@ -29,11 +29,15 @@ class HealthNode(Node):
         return 100.0 - self.health
 
     def repair(self, resources):
-        income_health = resources * self.reparation_cost_rate
+        income_health = resources / self.reparation_cost_rate
         needed_healh = self.damage
+        print(f"{income_health=}")
+        print(f"{needed_healh=}")
+        if needed_healh <= 0.0:
+            return resources
         if income_health > needed_healh:
             self.health = 100.0
-            resource_cost = (income_health - needed_healh) / self.reparation_cost_rate
+            resource_cost = (income_health - needed_healh) * self.reparation_cost_rate
             remainder = resources - resource_cost
             return remainder
 
