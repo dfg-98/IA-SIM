@@ -1,5 +1,5 @@
 from optparse import OptionParser
-from models.node import load_from_json
+from models.node_parser import load_from_json
 from metaheuristics.utils import fitness_function_factory
 from metaheuristics.genetic_algorithm import GeneticAlgorithm
 from simpy import Environment

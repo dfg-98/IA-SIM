@@ -1,10 +1,14 @@
+import numpy as np
 import logging
 from typing import List
 from simpy import Environment
 from networkx import Graph, draw_planar
 from matplotlib import pyplot as plt
 from networkx.algorithms.traversal import bfs_successors
-from .node import Node, ConsumerNode, ProducerNode
+from .node import HealthNode
+from .consumers import ConsumerNode
+from .generators import GeneratorNode
+from .node_parser import write_json
 
 log = logging.getLogger()
 
@@ -24,10 +28,11 @@ class Net:
     def refresh(self):
         self.assign_resources()
         self.set_consumption()
+        self.repair()
 
     def assign_resources(self):
         for node in self.graph.nodes:
-            if isinstance(node, ProducerNode) and self.resources > 0:
+            if isinstance(node, GeneratorNode) and self.resources > 0:
                 resources = self.get_resources_to_assign(node)
                 remainder = node.add_resources(resources)
                 self.resources += remainder
@@ -37,6 +42,12 @@ class Net:
         for node in self.graph.nodes:
             if isinstance(node, ConsumerNode):
                 node.set_consumption()
+
+    def repair(self):
+        for node in self.health_nodes:
+            if self.resources <= 0:
+                break
+            self.resources = node.repair(self.resources)
 
     def collect_resources(self):
         self.resources += sum(node.collect_resources() for node in self.graph.nodes)
@@ -91,22 +102,26 @@ class Net:
         draw_planar(self.graph, node_size=sizes, node_color=colors)
         plt.show()
 
-    def estimate_production(self, node: ProducerNode):
-        return node.max_production
+    def estimate_production(self, node: GeneratorNode):
+        return node.max_generation
 
-    def get_resources_to_assign(self, node: ProducerNode):
+    def get_resources_to_assign(self, node: GeneratorNode):
         """Returns the resources to assign to a node based on the current resources"""
 
         # TODO: This is a very naive implementation.
         return self.resources / len(self.producer_nodes)
 
     @property
-    def producer_nodes(self) -> List[ProducerNode]:
-        return [node for node in self.graph.nodes if isinstance(node, ProducerNode)]
+    def producer_nodes(self) -> List[GeneratorNode]:
+        return [node for node in self.graph.nodes if isinstance(node, GeneratorNode)]
 
     @property
     def consumer_nodes(self) -> List[ConsumerNode]:
         return [node for node in self.graph.nodes if isinstance(node, ConsumerNode)]
+
+    @property
+    def health_nodes(self) -> List[HealthNode]:
+        return [node for node in self.graph.nodes if isinstance(node, HealthNode)]
 
 
 def build_graph_from_nodes(nodes, graph):
