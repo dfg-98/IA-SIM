@@ -48,7 +48,6 @@ class ConsumerNode(Node):
     def collect_resources(self):
         resources = self.generated_resources
         self.generated_resources = 0
-        print(f"[Node {self.id}] COLLECTED RESOURCES: ", resources)
         return resources
 
     def color(self):

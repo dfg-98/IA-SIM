@@ -32,9 +32,6 @@ class Net:
         self.with_visual = with_visual
         self.edge_damage_rate = edge_damage_rate
         self.edge_reparation_cost = edge_reparation_cost
-        # for edge in graph.edges:
-        # print(edge)
-        # self.graph[edge[0]][edge[1]]["health"] = 100.0
 
     def refresh(self):
         self.assign_resources()
@@ -45,13 +42,9 @@ class Net:
         for node in self.graph.nodes:
             if isinstance(node, GeneratorNode) and self.resources > 0:
                 resources = self.get_resources_to_assign(node)
-                print("TOTAL RESOURCES: ", self.resources)
-                print("RESOURCES TO ASSIGN: ", resources)
                 remainder = node.add_resources(resources)
-                print("Reminder: ", remainder)
                 self.resources += remainder
                 self.resources -= resources
-                print("CUREENT RES: ", self.resources)
 
     def set_consumption(self):
         for node in self.graph.nodes:
@@ -71,7 +64,6 @@ class Net:
     def repair_edge(self, node1, node2, resources):
         income_health = resources / self.edge_reparation_cost
         edge = self.graph[node1][node2]
-        print("EDGE HEALTH: ", edge["health"])
         needed_healh = 100.0 - edge["health"]
         if income_health > needed_healh:
             edge["health"] = 100.0
@@ -84,7 +76,6 @@ class Net:
 
     def collect_resources(self):
         resources = sum(node.collect_resources() for node in self.graph.nodes)
-        print("COLLECTED RESOURCES: ", resources)
         self.resources += resources
 
     def resource_flow(self):
@@ -99,7 +90,7 @@ class Net:
                         current_power = power
                         if self.graph[node][successor]["health"] > 0:
                             power = successor.feed(power)
-                            print(f"Fed node {successor.id}. Remaining power: {power}")
+                            # print(f"Fed node {successor.id}. Remaining power: {power}")
                         consumed = current_power - power
                         damage = consumed / self.edge_damage_rate
                         self.graph[node][successor]["health"] -= damage
