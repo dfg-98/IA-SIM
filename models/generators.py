@@ -22,8 +22,12 @@ class GeneratorNode(HealthNode):
         self.max_resources = max_resources
         self.generation_bias = generation_bias
         self.generation_damage_rate = generation_damage_rate
+        self.fails = 0
 
     def produce(self, value):
+        if not self.allow_generation():
+            self.fails += 1
+            return 0.0
         value = min(value, self.max_generation)
         actual_production = np.random.uniform(
             low=max(0.0, value - self.generation_bias),
@@ -40,10 +44,20 @@ class GeneratorNode(HealthNode):
         self.health = max(self.health - damage, 0.0)
         return actual_production
 
+    def allow_generation(self):
+        """Allow production if the node has health"""
+        p = np.random.uniform(0.0, 1.0) ** 2
+        p *= 100
+        return self.health > p
+
     def add_resources(self, resources):
         total = self.resources + resources
         self.resources = min(total, self.max_resources)
         return max(total - self.max_resources, 0.0)
+
+    def repair(self, resources):
+        self.fails = 0
+        return super().repair(resources)
 
     def color(self):
         return "blue"

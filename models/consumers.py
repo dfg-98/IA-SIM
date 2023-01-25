@@ -4,7 +4,7 @@ from utils import clamp
 from enum import Enum
 
 DEFAULT_CONSUMPTION_BIAS = 10.0
-ELECTRICITY_PRICE = 10.0
+ELECTRICITY_PRICE = 5.0
 
 
 class ConsumerNode(Node):

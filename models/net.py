@@ -78,6 +78,7 @@ class Net:
             return remainder
 
         edge["health"] += income_health
+        edge["fails"] = 0
         return 0.0
 
     def collect_resources(self):
@@ -94,13 +95,16 @@ class Net:
             for node, successors in bfs_successors(self.graph, producer):
                 for successor in successors:
                     if isinstance(successor, ConsumerNode):
-                        current_power = power
-                        if self.graph[node][successor]["health"] > 0:
+                        if self.allow_edge(node, successor):
+                            current_power = power
                             power = successor.feed(power)
                             # print(f"Fed node {successor.id}. Remaining power: {power}")
-                        consumed = current_power - power
-                        damage = consumed / self.edge_damage_rate
-                        self.graph[node][successor]["health"] -= damage
+                            consumed = current_power - power
+                            damage = consumed / self.edge_damage_rate
+                            self.graph[node][successor]["health"] -= damage
+                        else:
+                            self.graph[node][successor]["fails"] -= 1
+
                         if power <= 0:
                             break
                 if power <= 0:
@@ -122,6 +126,11 @@ class Net:
             print("Resources: ", self.resources)
             print("Score: ", self.score)
             self.post_step()
+
+    def allow_edge(self, node1, node2):
+        p = np.random.uniform(0.0, 1.0) ** 2
+        p *= 100
+        return self.graph[node1][node2]["health"] > p
 
     def score_network(self):
         score = 0
@@ -173,5 +182,5 @@ def build_graph_from_nodes(nodes, graph):
         g.add_node(node)
     for edge in graph.edges:
         x, y = edge[0], edge[1]
-        g.add_edge(nodes[x], nodes[y], health=100.0)
+        g.add_edge(nodes[x], nodes[y], health=100.0, fails=0)
     return g

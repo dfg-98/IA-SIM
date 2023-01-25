@@ -20,6 +20,7 @@ class ResourceProducerNode(HealthNode, ConsumerNode):
         self.resource_production_bias = resource_production_bias
         self.production_damage_rate = production_damage_rate
         self.current_production = 0.0
+        self.fails = 0
 
     def set_consumption(self):
         low_production = max(
@@ -33,6 +34,9 @@ class ResourceProducerNode(HealthNode, ConsumerNode):
         return super().set_consumption()
 
     def feed(self, power):
+        if not self.allow_production():
+            self.fails += 1
+            return power
         if power <= 0:
             return 0.0
         used_power = min(power, self.current_consumption)
@@ -64,6 +68,16 @@ class ResourceProducerNode(HealthNode, ConsumerNode):
             return "yellow"
         elif self.status == ConsumerNode.Status.ON:
             return "black"
+
+    def allow_production(self):
+        """Allow production if the node has health"""
+        p = np.random.uniform(0.0, 1.0) ** 2
+        p *= 100
+        return self.health > p
+
+    def repair(self, resources):
+        self.fails = 0
+        return super().repair(resources)
 
     def size(self):
         return 200 * (self.current_production + 1)
