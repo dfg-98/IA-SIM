@@ -1,5 +1,6 @@
+import json
 from optparse import OptionParser
-from models.node_parser import load_from_json
+from models.node_parser import load_from_json, graph_to_json
 from metaheuristics.utils import fitness_function_factory
 from metaheuristics.genetic_algorithm import GeneticAlgorithm
 from simpy import Environment
@@ -31,6 +32,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Show graphs",
     )
+
     parser.add_option(
         "-p",
         "--population",
@@ -38,6 +40,14 @@ if __name__ == "__main__":
         default=100,
         type="int",
         help="Population size for Genetic Algorithm",
+    )
+    parser.add_option(
+        "-w",
+        "--write",
+        dest="write",
+        default=False,
+        action="store_true",
+        help="Number of solutions to write to file",
     )
     parser.add_option(
         "-g",
@@ -61,8 +71,18 @@ if __name__ == "__main__":
         options.population, options.generations, weights, fitness_function
     )
     solutions = ga.run()
-
+    print(solutions)
     print("Best solution: ", solutions[0])
+
+    if options.write:
+
+        with open(f"solution.json", "w") as f:
+            json.dump(
+                graph_to_json(
+                    build_graph_from_nodes(nodes, solutions[0]),
+                ),
+                f,
+            )
 
     env = Environment()
     net = Net(

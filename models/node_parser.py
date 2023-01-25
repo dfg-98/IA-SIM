@@ -1,5 +1,6 @@
 import json
 import numpy as np
+from networkx import Graph
 from .node import HealthNode
 from .consumers import ConsumerNode, MinMaxConsumerNode, TurnBasedConsumerNode
 from .generators import GeneratorNode
@@ -50,3 +51,32 @@ def load_from_json(path):
             weights[weight["node1"], weight["node2"]] = value
 
     return nodes, weights
+
+
+def graph_to_json(graph):
+    nodes = [node.to_json() for node in graph.nodes]
+    edges = [
+        {
+            "source": edge[0].id,
+            "target": edge[1].id,
+            "health": edge[2]["health"],
+            "fails": edge[2]["fails"],
+        }
+        for edge in graph.edges(data=True)
+    ]
+    return {"nodes": nodes, "edges": edges}
+
+
+def graph_from_json(data):
+    nodes = [parse_node(node) for node in data["nodes"]]
+
+    g = Graph()
+    for n in nodes:
+        g.add_node(n)
+    for e in data["edges"]:
+        source_id = e["source"]
+        target_id = e["target"]
+        source = [n for n in nodes if n.id == source_id][0]
+        target = [n for n in nodes if n.id == target_id][0]
+        g.add_edge(source, target, health=e["health"], fails=e["fails"])
+    return g
