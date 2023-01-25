@@ -2,13 +2,14 @@ import numpy as np
 import logging
 from typing import List
 from simpy import Environment
-from networkx import Graph, draw_planar
+from networkx import Graph, draw_planar, draw_shell
 from matplotlib import pyplot as plt
 from networkx.algorithms.traversal import bfs_successors
 from .node import HealthNode
 from .consumers import ConsumerNode
 from .generators import GeneratorNode
 from .node_parser import write_json
+from .generation_estimation import GenerationEstimatorAgent
 
 log = logging.getLogger()
 
@@ -32,11 +33,16 @@ class Net:
         self.with_visual = with_visual
         self.edge_damage_rate = edge_damage_rate
         self.edge_reparation_cost = edge_reparation_cost
+        self.reminders = []
+        self.estimator_agent = GenerationEstimatorAgent(self)
 
     def refresh(self):
         self.assign_resources()
         self.set_consumption()
         self.repair()
+
+    def post_step(self):
+        self.estimator_agent.calculate_estimations()
 
     def assign_resources(self):
         for node in self.graph.nodes:
@@ -79,7 +85,8 @@ class Net:
         self.resources += resources
 
     def resource_flow(self):
-        producers = self.producer_nodes
+        producers = self.generator_nodes
+        self.reminders.append({})
 
         for producer in producers:
             power = producer.produce(self.estimate_production(producer))
@@ -98,6 +105,7 @@ class Net:
                             break
                 if power <= 0:
                     break
+            self.reminders[-1][producer.id] = power
 
     def run(self):
         while True:
@@ -113,15 +121,19 @@ class Net:
             self.score_network()
             print("Resources: ", self.resources)
             print("Score: ", self.score)
+            self.post_step()
 
     def score_network(self):
         score = 0
         for node in self.consumer_nodes:
             if node.status == ConsumerNode.Status.ON:
                 score += 1.0
-            elif node.status == ConsumerNode.Status.PARTIAL:
-                score += 0.5
+        health_score = 0
+        for node in self.health_nodes:
+            health_score += node.health / 100.0
+        health_score = health_score / len(self.health_nodes)
         score = score / len(self.consumer_nodes)
+        score = score * health_score
         self.score = (self.score * self.steps + score) / (self.steps + 1)
         self.steps += 1
 
@@ -130,20 +142,20 @@ class Net:
         colors = [node.color() for node in self.graph.nodes]
         plt.clf()
 
-        draw_planar(self.graph, node_size=sizes, node_color=colors)
+        draw_shell(self.graph, node_size=sizes, node_color=colors)
         plt.show()
 
     def estimate_production(self, node: GeneratorNode):
-        return node.max_generation
+        return self.estimator_agent.estimate(node)
 
     def get_resources_to_assign(self, node: GeneratorNode):
         """Returns the resources to assign to a node based on the current resources"""
 
         # TODO: This is a very naive implementation.
-        return self.resources / len(self.producer_nodes)
+        return self.resources / len(self.generator_nodes)
 
     @property
-    def producer_nodes(self) -> List[GeneratorNode]:
+    def generator_nodes(self) -> List[GeneratorNode]:
         return [node for node in self.graph.nodes if isinstance(node, GeneratorNode)]
 
     @property
