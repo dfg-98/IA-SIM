@@ -50,9 +50,21 @@ Dada una red eléctrica la simulación de su comportamiento es la siguiente:
 
 ## Inteligencia Artificial:
 
+### Algoritmo Genético:
+
 Para la construcción de la red se usa un algoritmo genético cuyas soluciones son redes eléctricas y su función de fitness está dada mediante 
 la simulación del comportamiento de la red y la evaluación de la misma.
 
+Los cromosomas de las redes son la lista de adyacencia aplanada del grafo que representa a la red. Los procesos de 
+reproducción, cruzamiento y mutación se realizan de la siguiente forma:
+
+El proceso de reproducción consiste en tomar la población actual, guardada en un array y ordenada de mayor a menor según el fitness de sus individuos, y según su posición en el array y dependiendo del parámetro $\beta$, se decide si un individuo se duplica, se mantiene o se elimina de la población intermedia. Con este mecanismo los individuos más aptos serán duplicados y tendrán mayor probabilidad de ser seleccionados en el proceso de cruzamiento.
+
+En el proceso de cruzamiento se seleccionan parejas de la población intermedia de forma aleatoria, cada pareje seleccionada genera dos hijos. Se selecciona un gen de cruzamiento aleatoriamente en cada cruzamiento (una posición del array booleano que representa su cromosoma). Este gen particiona los cromosomas del padre 1 y padre 2 en dos partes, llamemoslas parte izquierda y parte derecha. El cromosoma del primer hijo está compuesto por la parte izquierda del padre 1 y la parte derecha del padre 2. El cromosoma del segundo hijo está compuesto por la parte izquierda del padre 2 y la parte derecha del padre 1. Luego los cromosomas de esta nueva generación de individuos pasan al proceso de mutación.
+
+En el proceso de mutación se seleccionan individuos para ser mutados, con una probabilidad de 0.001. A los individuos seleccionados se les cambia un gen de forma aleatoria.
+
+Por último se reconstruye la nueva generación de redes a partir de sus cromosomas y esas redes pasan a ser la población actual para la próxima iteración del algoritmo.
 
 Durante la simulación se tienen varios agentes inteligentes que se encargan de diferentes tareas:
 
