@@ -1,5 +1,6 @@
 # Red de distribución de recursos. Red electríca
 
+[Ver informe](https://github.com/dfg-98/IA-SIM/blob/c16b44a01b72a24bf2f74a2e68fe6e410998b8f2/informe.md)
 
 ## Integrantes
 
