@@ -56,4 +56,4 @@ env.run(until=10)
 weights = np.zeros((13, 13))
 
 
-write_json(net.graph, weights, "test.json")
+write_json(net.graph.nodes, weights, "test.json")

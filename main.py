@@ -93,4 +93,4 @@ if __name__ == "__main__":
     )
     env.process(net.run())
 
-    env.run(until=5)
+    env.run(until=10)

@@ -24,7 +24,10 @@ class ConsumerNode(Node):
     def set_consumption(self):
         self.consumptions.append(self.current_consumption)
         self.mean_consumption = np.mean(self.consumptions)
-        self.status = ConsumerNode.Status.OFF
+        if self.current_consumption > 0.0:
+            self.status = ConsumerNode.Status.OFF
+        else:
+            self.status = ConsumerNode.Status.ON
         return self.current_consumption
 
     def feed(self, power):
@@ -118,9 +121,9 @@ class TurnBasedConsumerNode(ConsumerNode):
     def _check_for_turn(self):
         if self.turns_to_change == 0:
             self.consumming = not self.consumming
+            self.turns_to_change = self.on_turns if self.consumming else self.off_turns
         else:
             self.turns_to_change -= 1
-        self.turns_to_change = self.on_turns if self.consumming else self.off_turns
 
     def to_json(self):
         node = super().to_json()

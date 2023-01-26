@@ -148,9 +148,10 @@ class Net:
     def draw(self):
         sizes = [node.size() for node in self.graph.nodes]
         colors = [node.color() for node in self.graph.nodes]
+        labels = {node: node.id for node in self.graph.nodes}
         plt.clf()
 
-        draw_shell(self.graph, node_size=sizes, node_color=colors)
+        draw_shell(self.graph, node_size=sizes, node_color=colors, labels=labels)
         plt.show()
 
     def estimate_production(self, node: GeneratorNode):

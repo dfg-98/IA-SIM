@@ -35,6 +35,77 @@ La red eléctrica está representada como un grafo cuyos vértices son estos nod
 
 Todos los elementos con salud pueden ser reparados usando recursos y tienen costos variables de reparación.
 
+
+### Nodos consumidores
+
+`MinMaxConsumerNode`:
+
+- `min`: consumo mínimo del nodo
+- `max`: consumo máximo del nodo
+
+`TurnBasedConsumer`:
+
+- `mean_consumption`: consumo promedio del nodo, el consumo estará dado por un valor uniforme en una vecindad de este valor de radio `DEFAULT_CONSUMPTION_BIAS`
+- `on_turns`: número de rondas que estará consumiendo antes de cambiar su estado a descanso
+- `off_turns`: número de turnos que estará descansando sin consumir hasta reactivarse
+
+Los nodos consumidores tienen asociado un estado en dependencia de si fue satisfecha su demanda de consumo
+
+```python
+class Status(Enum):
+        OFF = 0   # Al nodo no se le ha administrado energía
+        PARTIAL = 2 # El nodo recibió energía pero no suficiente para satisfacer su demanda
+        ON = 1 # La demanda del nodo fue satisfecha
+```
+
+Estos nodos tienen un método `feed` que toma como entrada la cantidad de energía que se le quiere suministrar, con este valor 
+el nodo actualiza su estado y devuelve la energía sobrante.
+
+Los nodos puramente consumidores producen recursos bajo la idea de "cobrar la electricidad". Para ello existe una variable global
+`ELECTRICITY_PRICE` que indica el costo por consumir una unidad de energía.
+
+
+En la visualización el nodo se dibuja en rojo si se encuentra en `OFF`, naranja si está `PARTIAL` y verde si está `ON`.
+
+
+### Nodos generadores
+
+`GeneratorNode`
+
+- `max_generation`: capacidad máxima de generación.
+- `generation_rate`: cantidad de recursos necesaria para producir una unidad de energía
+- `generation_bias`: rango dentro del cual se obtendrá el valor de energía generada.
+- `generation_damage_rate`: Cantidad de energía generada para producir un daño de una unidad a la salud del nodo.
+- `resources`: recursos con que cuenta el nodo
+- `max_resources`: máximo de recursos que puede almacenar el nodo
+- `reparation_cost_rate`: cantidad de recursos necesarios para reparar la salud del nodo en una unidad
+
+Para generar energía se expone un método que toma el valor de energía que se desea producir. Se comprueba si la salud del nodo 
+va a permitir la generación, esto es, mediante una función de probabilidad cuadrática que favorece los valores pequeños comprobar que la salud del nodo es mayor.
+En caso de producir se genera una valor con probabilidad uniforme en una vecindad del valor deseado de radio `generation_bias`, de este valor de generación deseado se genera lo que la salud y los recursos con que cuenta el nodo permitan. Se descuentan los recursos utilizados y se refleja el daño de producir dicha cantidad a la salud del nodo.
+
+El nodo generador posea además métodos para reabastecer sus recursos y producir reparaciones.
+
+Estos nodos se dibujan de azul en las visualizaciones.
+
+### Nodos productores
+
+`ResourceProducerNode`
+
+- `max_resource_production`: cantidad máxima de recursos que puede producir el nodo.
+- `resource_production_rate`: cantidad de energía necesaria para producir una unidad de recursos.
+- `resource_production_bias`: rango en que fluctúa la producción.
+- `production_damage_rate`: cantidad de recursos que al producirse reflejan un daño a la salud en una unidad.
+- `reparation_cost_rate`: cantidad de recursos necesarios para reparar la salud del nodo en una unidad
+
+Los nodos productores son a su vez consumidores, cuyo consumo está dado por la cantidad de recursos que va a producir multiplicado por `resource_production_rate`.
+
+Se establece el valor de producción deseado como una variable aleatoria en una vecinadad del máximo de producción posible. Cuando el nodo es alimentado producirá recursos en función de la energía que se le proporcione hasta suplir el valor de producción establecido y mientras la salud del nodo lo permita.
+
+En las visualizaciones estos nodos se representan en rosado si no se le ha suministrado energía, amarillo si está parcialimente alimentado y negro cuando está abastecido. Además
+su tamaño será proporcional a la cantidad de recursos generados.
+
+
 ## Simulación:
 
 Dada una red eléctrica la simulación de su comportamiento es la siguiente:
@@ -119,6 +190,114 @@ Durante la simulación se tienen varios agentes inteligentes que se encargan de 
 - `ReparationAgent`: se encarga de determinar que nodos y aristas reparar y qué recursos usar para ello.
 
 ## Resultados:
+
+Se estudiaron varios casos para comprobar nuestro modelo. A continuación se presentan los resultados.
+
+### Caso 1:
+
+Se estudia el caso de 6 nodos consumidores, 5 de ellos `MinMaxConsumer` y un `TurnBasedConsumer` y un nodo generador.
+
+- MinMaxConsumer("min": 50, "max": 100)
+- MinMaxConsumer("min": 50, "max": 100)
+- MinMaxConsumer("min": 20, "max": 30)
+- MinMaxConsumer("min": 20, "max": 30)
+- MinMaxConsumer("min": 100, "max": 150)
+- TurnBasedConsumer("mean_consumption": 500, "on_turns": 1, "off_turns": 3)
+- Generator(
+      "reparation_cost_rate": 10.0,
+      "max_generation": 700,
+      "generation_rate": 2.0,
+      "max_resources": 1000,
+      "generation_bias": 10.0,
+      "generation_damage_rate": 100
+    )
+
+```python
+[
+    [np.inf, 1, 1, 1, 1, 1, 1, ],
+    [1, np.inf, 1, 1, 1, 1, 1000, ],
+    [1, 1, np.inf, 1, 1, 1, 1000, ],
+    [1, 1, 1, np.inf, 1, 1, 1000, ],
+    [1, 1, 1, 1, np.inf, 1, 1000, ],
+    [1, 1, 1, 1, 1, np.inf, 1000, ],
+    [1, 1000, 1000, 1000, 1000, 1000, np.inf, ]
+]
+```
+
+En esta configuración el generador puede abastecer a toda la red en el mejor de los casos y provocaría déficet en casos donde no tuviese recursos suficientes. Además los costos de las conexiones del generador con el resto de los nodos es muy alta salvo para uno por lo que es de esperarse que
+tenga una conexión con este nodo.
+
+En la siguiente imagen vemos el resultado obtenido:
+
+![](results/case_1/net0.png)
+
+Aquí podemos ver como efectivamente hay una conexión del generador con el nodo `0` . Además la red es un camino con el nodo generador justo en el medio. Esta solución es bastante trivial y bastante buena aunque una mejor solución pudiese haber sido con el generador en un extremo.
+
+Se ve además para el final de la simulación que los nodos más alejados terminan quedando desabastecidos
+
+![](results/case_1/net1.png)
+### Caso 2
+
+Este caso se tienen dos generadores.
+Los mismos nodos consumidores que el anterior y un nodo productor de recursos. Además los costos de las conexiones son iguales para todo par de nodos
+
+
+- MinMaxConsumer("min": 50, "max": 100)
+- MinMaxConsumer("min": 50, "max": 100)
+- MinMaxConsumer("min": 20, "max": 30)
+- MinMaxConsumer("min": 20, "max": 30)
+- MinMaxConsumer("min": 100, "max": 150)
+- TurnBasedConsumer("mean_consumption": 500, "on_turns": 1, "off_turns": 3)
+- Generator(
+      "reparation_cost_rate": 10.0,
+      "max_generation": 700,
+      "generation_rate": 2.0,
+      "max_resources": 1000,
+      "generation_bias": 10.0,
+      "generation_damage_rate": 100
+    )
+- Generator(
+      "reparation_cost_rate": 10.0,
+      "max_generation": 300,
+      "generation_rate": 0.25,
+      "max_resources": 500,
+      "generation_bias": 10.0,
+      "generation_damage_rate": 100
+    )
+- ResourceProducer(
+      "reparation_cost_rate": 10.0,
+      "max_resource_production": 1000,
+      "resource_production_rate": 10.0,
+      "resource_production_bias": 10.0,
+      "production_damage_rate": 100
+    )
+
+```python
+[
+    [np.inf, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, np.inf, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, np.inf, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, np.inf, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, np.inf, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, np.inf, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, np.inf, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, np.inf, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, np.inf],
+]
+```
+
+Aquí es de esperarse que la red resultante tenga al nodo productor lo más cercano posible a un generador pues esto 
+permitirá tener mayor cantidad de recursos para la generación.
+
+Efectivamente el resultado obtenido nos da una conexión directa entre el generador más potente con el nodo productor.
+
+![](results/case_2/net0.png)
+
+Aunque en las etapas finales de la simulación los recursos que se
+producen no son suficiente para mantener la red y los nodos más
+alejados terminan quedando desabastecidos.
+
+![](results/case_2/net3.png)
 
 ## Conclusiones:
 
