@@ -299,6 +299,20 @@ alejados terminan quedando desabastecidos.
 
 ![](results/case_2/net3.png)
 
+### Caso 3
+
+Este caso es muy similar al anterior con la única diferencia que un nodo consume mucho más que el resto.
+
+La hipótesis es que dicho nodo se encuentre lo más lejos de los generadores posible o que simplemente no se le conecte a la red.
+
+
+Una de la soluciones encontradas comprueba esta hipótesis:
+
+![](results/case_3/net0.png)
+
+Donde la red encontrada es muy parecida a la del caso 2 con el nodo productor próximo al generador y el nodo con el consumo excesivo desconectado de la red.
+
+
 ## Conclusiones:
 
 Aunque la modelación del problema es bastante simple permite dar una idea de cómo se puede modelar un problema más complejo y cómo se puede usar la inteligencia artificial para resolverlo.
