@@ -61,7 +61,7 @@ class GeneticAlgorithm:
 
     def reproduction(
         self,
-    ):  # TODO check if this work fine because the indexes of the population
+    ):  
         p_max = self.beta / len(self.population)
         p_min = (2 - self.beta) / len(self.population)
         n = len(self.population)
@@ -80,7 +80,7 @@ class GeneticAlgorithm:
                 intermediate_population.append(self.population[i])
 
         self.intermediate_population = (
-            intermediate_population  # TODO check the lenght of the final population
+            intermediate_population  
         )
 
     def crossing(self):
