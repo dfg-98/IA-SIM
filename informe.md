@@ -81,7 +81,7 @@ En la visualización el nodo se dibuja en rojo si se encuentra en `OFF`, naranja
 - `reparation_cost_rate`: cantidad de recursos necesarios para reparar la salud del nodo en una unidad
 
 Para generar energía se expone un método que toma el valor de energía que se desea producir. Se comprueba si la salud del nodo 
-va a permitir la generación, esto es, mediante una función de probabilidad cuadrática que favorece los valores pequeños comprobar que la salud del nodo es mayor.
+va a permitir la generación, esto es, mediante una función de probabilidad cuadrática que favorece los valores pequeños,  comprobar que la salud del nodo es mayor que el valor generado.
 En caso de producir se genera una valor con probabilidad uniforme en una vecindad del valor deseado de radio `generation_bias`, de este valor de generación deseado se genera lo que la salud y los recursos con que cuenta el nodo permitan. Se descuentan los recursos utilizados y se refleja el daño de producir dicha cantidad a la salud del nodo.
 
 El nodo generador posea además métodos para reabastecer sus recursos y producir reparaciones.
@@ -111,7 +111,7 @@ su tamaño será proporcional a la cantidad de recursos generados.
 Dada una red eléctrica la simulación de su comportamiento es la siguiente:
 
 - Un agente se encarga de asignar recursos a los nodos generadores para la producción de energía.
-- Cada nodo consumidor establece su consumo en el turnos
+- Cada nodo consumidor establece su consumo en el turno.
 - Un agente determina que nodos y aristas reparar y qué recursos usar para ello.
 - Un agente determina para cada nodo `Generador` la cantidad de energía que debería generar (la generación real puede verse afectado por las condiciones propias del generador como recursos disponibles, salud, etc).
 - Se genera energía y se distribuye por la red alimentando cada nodo consumidor.
@@ -186,8 +186,9 @@ Por último se reconstruye la nueva generación de redes a partir de sus cromoso
 Durante la simulación se tienen varios agentes inteligentes que se encargan de diferentes tareas:
 
 - `ResourceAssigner`: se encarga de asignar recursos a los nodos generadores para la producción de energía.
-- `GenarationEstimator`: se encarga de determinar para cada nodo `Generador` la cantidad de energía que debería generar.
-- `ReparationAgent`: se encarga de determinar que nodos y aristas reparar y qué recursos usar para ello.
+Utiliza una estrategia greedy para ello.
+- `GenarationEstimator`: se encarga de determinar para cada nodo `Generador` la cantidad de energía que debería generar. Utiliza una estrategia de aumentar la generación o disminuirla en caso de desabastecimiento en la red o de energía sobrante.
+- `ReparationAgent`: se encarga de determinar que nodos y aristas reparar y qué recursos usar para ello. Trata de reparar todo lo que pueda usando una estrategia greedy.
 
 ## Resultados:
 
